@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ringba Final Expense Bid Runner</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .card { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+
+    <div class="w-full max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-green-700">Final Expense Bid Runner</h1>
+            <p class="text-gray-600 mt-2">Sends secure ping to RTB ID: <span id="rtb-id" class="font-mono bg-yellow-100 p-1 rounded">114135cec8f84baf858208a2303ab953</span></p>
+        </header>
+
+        <!-- INPUT CARD -->
+        <div class="card bg-white p-6 rounded-xl mb-8 border border-gray-200">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Enter Client Data</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="callerId" class="block text-sm font-medium text-gray-600 mb-1">Client Phone (CID - Required)</label>
+                    <input type="text" id="callerId" placeholder="e.g., 18005551234" value="18005551234" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 font-mono">
+                </div>
+                <div>
+                    <label for="zipcode" class="block text-sm font-medium text-gray-600 mb-1">Client Zip Code (Required)</label>
+                    <input type="text" id="zipcode" placeholder="e.g., 90210" value="90210" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 font-mono">
+                </div>
+            </div>
+
+            <button id="live-bid-btn" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50" onclick="runLiveBid()">
+                Run Live Ringba Bid
+            </button>
+        </div>
+
+        <!-- OUTPUT CARD -->
+        <div class="card bg-gray-50 p-6 rounded-xl border border-gray-300">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Bid Response</h2>
+
+            <div id="status-message" class="p-3 rounded-lg text-lg font-bold mb-4 bg-yellow-100 text-yellow-700">
+                Ready to ping the Ringba RTB server.
+            </div>
+
+            <h3 class="text-lg font-medium text-gray-700 mb-2 mt-4">Full JSON Response</h3>
+            <pre id="api-output" class="bg-gray-200 p-3 rounded-lg overflow-x-auto text-sm font-mono text-gray-800">{}</pre>
+        </div>
+    </div>
+
+    <script>
+        // The front-end code calls the backend endpoint: /api/ringba-bid
+        
+        const callerIdInput = document.getElementById('callerId');
+        const zipcodeInput = document.getElementById('zipcode');
+        const liveBidBtn = document.getElementById('live-bid-btn');
+        const statusMessage = document.getElementById('status-message');
+        const apiOutput = document.getElementById('api-output');
+
+        async function runLiveBid() {
+            const CID = callerIdInput.value.trim();
+            const zipcode = zipcodeInput.value.trim();
+
+            if (!CID || !zipcode) {
+                // Using a custom alert/modal is preferred, but for this simulation:
+                alert('Please enter both Caller ID and Zip Code.'); 
+                return;
+            }
+
+            liveBidBtn.disabled = true;
+            statusMessage.className = "p-3 rounded-lg text-lg font-bold mb-4 bg-blue-100 text-blue-700";
+            statusMessage.textContent = "Sending secure bid request to Ringba...";
+            apiOutput.textContent = "{}";
+
+            try {
+                // Call the local backend server (server.js)
+                const response = await fetch('/api/ringba-bid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ CID, zipcode })
+                });
+
+                const data = await response.json();
+                
+                apiOutput.textContent = JSON.stringify(data, null, 2);
+
+                if (response.ok) {
+                    if (data.bidAmount > 0) {
+                        statusMessage.className = "p-3 rounded-lg text-lg font-bold mb-4 bg-green-100 text-green-700";
+                        statusMessage.textContent = `SUCCESS! Bid accepted for $${data.bidAmount} (Transfer Number: ${data.phoneNumber || 'N/A'})`;
+                    } else {
+                        statusMessage.className = "p-3 rounded-lg text-lg font-bold mb-4 bg-red-100 text-red-700";
+                        statusMessage.textContent = `REJECTED: ${data.rejectReason || 'No Bid/Capacity Error'}`;
+                    }
+                } else {
+                    statusMessage.className = "p-3 rounded-lg text-lg font-bold mb-4 bg-red-100 text-red-700";
+                    statusMessage.textContent = `Server Error: ${data.message || 'Could not connect to service.'}`;
+                }
+
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                statusMessage.className = "p-3 rounded-lg text-lg font-bold mb-4 bg-red-100 text-red-700";
+                statusMessage.textContent = "FATAL ERROR: Could not communicate with backend server.";
+            } finally {
+                liveBidBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

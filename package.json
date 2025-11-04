@@ -1,0 +1,13 @@
+{
+  "name": "ringba-bid-runner",
+  "version": "1.0.0",
+  "description": "Secure Node.js Express server for Ringba RTB bidding.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^2.6.1"
+  }
+}
