@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-const RTB_ID = '618e2f522f3a467791b46a25f3f33cc5';
+const RTB_ID = '114135cec8f84baf858208a2303ab953';
 const RINGBA_API_URL = `https://rtb.ringba.com/v1/production/${RTB_ID}.json`;
 
 module.exports = async (req, res) => {
